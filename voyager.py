@@ -1,6 +1,8 @@
 from gpiozero import Button
 from signal import pause
 from pygame import mixer
+from PIL import Image
+import ST7789 as ST7789
 import time
 
 button_a = Button(5)
@@ -21,7 +23,7 @@ def play_track(filename):
 
     mixer.music.load(filename)
     mixer.music.play()
-    mixer.music.set_volume(0.4)
+    mixer.music.set_volume(0.3)
 
 def next_track():
     global file_no
@@ -52,10 +54,47 @@ def shutdown():
         print("Shutdown")
         mixer.music.stop()
 
+def display_image(filename):
+    global disp
+
+    image = Image.open(filename)
+    disp.display(image)
+
+    print("Displayed image: " + filename)
+
 # Main
 
 # Setup pyaudio
 mixer.init()
+
+# Setup screen
+
+HEIGHT = 240
+WIDTH = 240
+
+disp = ST7789.ST7789(
+    height = HEIGHT,
+    rotation = 90,
+    port = 0,
+    cs = 1,
+    dc = 9,
+    backlight = 13,
+    spi_speed_hz = 80*1000*1000,
+    offset_left = 0,
+    offset_top = 0
+)
+
+WIDTH = disp.width
+HEIGHT = disp.height
+disp.begin()
+
+image_files = [
+    "Starfleet_Command_Insignia.png",
+    "LCARS_wallpaper.png",
+    "Starfleet_Command_simple_insignia.png",
+    "Voyager_Full_LCARS.jpg"
+]
+image_num = -1
 
 # Setup button actions
 button_a.when_pressed = prev_track
@@ -67,9 +106,16 @@ button_y.when_pressed = pause
 next_track()
 
 while True:
+    image_num = image_num + 1
+    if image_num == len(image_files):
+        image_num = 0
+
+    display_image(image_files[image_num])
+
     if not mixer.music.get_busy():
         next_track()
-    time.sleep(5)
+
+    time.sleep(7)
 
 pause()
 
