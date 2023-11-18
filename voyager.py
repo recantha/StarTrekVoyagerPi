@@ -6,13 +6,9 @@ import ST7789 as ST7789
 import time
 import os
 
-button_a = Button(5)
-button_b = Button(6)
-button_x = Button(16)
-button_y = Button(24)
 file_no = -1
 folder = "/home/pi/StarTrekVoyagerPi"
-
+paused = False
 files = ["VoyagerMainTitle.mp3", "VoyagerCore.mp3", "VoyagerRedAlert.mp3", "VoyagerTransporter.mp3", "VoyagerWarp.mp3"]
 
 def stop_current_track():
@@ -52,6 +48,16 @@ def prev_track():
 
     play_track(files[file_no])
 
+def pause_track():
+    global paused
+
+    if not paused:
+        mixer.music.pause()
+        paused = True
+    else:
+        mixer.music.unpause()
+        paused = False
+
 def display_text(the_text):
     global disp
 
@@ -71,11 +77,10 @@ def shutdown():
 
     shutting_down = True
 
-    if button_x.is_pressed and button_y.is_pressed:
-        display_text("Shutdown")
-        time.sleep(3)
-        mixer.music.stop()
-        os.system('sudo shutdown now')
+    display_text("Shutdown")
+    time.sleep(3)
+    mixer.music.stop()
+    os.system('sudo shutdown now')
 
 def display_image(filename):
     global disp
@@ -119,13 +124,20 @@ image_files = [
 ]
 image_num = -1
 
-display_text("Starting up...")
+display_text("LCARS initialising...")
+time.sleep(3)
+
+# Setup buttons
+button_a = Button(5)
+button_b = Button(6)
+button_x = Button(16, hold_time=5)
+button_y = Button(24)
 
 # Setup button actions
 button_a.when_pressed = prev_track
 button_b.when_pressed = next_track
-button_x.when_pressed = shutdown
-button_y.when_pressed = pause
+button_x.when_held = shutdown
+button_y.when_pressed = pause_track
 
 # Start initial track
 next_track()
